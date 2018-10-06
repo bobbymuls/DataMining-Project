@@ -1,3 +1,4 @@
+rm(list = ls())
 library(dplyr)     #data wrangling tasks
 library(tidyr)     #data wrangling tasks
 library(ggplot2)   #plotting and data visualization tasks
@@ -5,14 +6,13 @@ library(lubridate) #date and time manipulation
 library(gridExtra) #arrangement of plots
 library(corrplot)  #Correlation function
 
-ks <- read.csv("ks-projects-201801.csv") #data import
+ks <- read.csv("ks_project_2018.csv") #data import
 attach(ks)
 names(ks)
 str(ks) #for a compact display of ks data
 
 #2. Data Cleansing Steps
 #2a. Conversion of data type and reordering of variables order
-ks$ID <- as.character(ks$ID)
 ks$name <- as.character(ks$name)
 ks$deadline <- as.Date(ks$deadline)
 ks$launched <- as.Date(ks$launched)
@@ -24,18 +24,6 @@ ks.proj <- ks %>% filter(state == "failed" | state == "successful")
 ks.proj$state <- as.character(ks.proj$state)
 ks.proj$state <- as.factor(ks.proj$state)
 summary(ks.proj$state)
-
-#2c. Check and delete missing entries
-(sum(is.na(ks.proj))/count(ks.proj))*100 #0.063%, check the percentage of missing entries
-ks.proj <- na.omit(ks.proj)              #delete observations with missing entries
-count(ks.proj)                           #331, 465 observations left
-
-#2d. Creation of features
-ks.proj$duration <- as.numeric(ks.proj$deadline - ks.proj$launched) #introduce new variable, duration to the dataset
-#further split date data into year, month and day for analysis
-ks.proj <- ks.proj %>% 
-  separate(col = "deadline", into = c("deadline_year", "deadline_month", "deadline_day"), sep = "-") %>%
-  separate(col = "launched", into = c("launched_year", "launched_month", "launched_day"), sep = "-")
 
 #2e. Manipulation of features
 #reducing levels in country
@@ -142,3 +130,4 @@ gridExtra::grid.arrange(p1, p2, ncol = 2)
 # Correlation between all numerical variables
 corMat <- cor(ks.proj[, c(9, 13, 15, 17:20)])
 corrplot.mixed(corMat,tl.pos = "lt")
+               
