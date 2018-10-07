@@ -1,10 +1,18 @@
 rm(list = ls())
-library(dplyr)     #data wrangling tasks
-library(tidyr)     #data wrangling tasks
-library(ggplot2)   #plotting and data visualization tasks
-library(lubridate) #date and time manipulation
-library(gridExtra) #arrangement of plots
-library(corrplot)  #Correlation function
+
+#install.packages("dplyr") 
+#install.packages("tidyr")  
+#install.packages("ggplot2")  
+#install.packages("lubridate")
+#install.packages("gridExtra")
+#install.packages("corrplot") 
+
+library("dplyr")     #data wrangling tasks
+library("tidyr")     #data wrangling tasks
+library("ggplot2")   #plotting and data visualization tasks
+library("lubridate") #date and time manipulation
+library("gridExtra") #arrangement of plots
+library("corrplot")  #Correlation function
 
 ks <- read.csv("ks_project_2018.csv") #data import
 attach(ks)
