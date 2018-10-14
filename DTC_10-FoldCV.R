@@ -6,6 +6,19 @@ library(RColorBrewer)
 library(caTools)
 
 dataset = read.csv("ks_project_2018.csv")
+drops = c("X",
+          "name",
+          "launched_year",
+          "launched_month",
+          "launched_day",
+          "deadline_year",
+          "deadline_month",
+          "deadline_day",
+          "currency",
+          "usd.pledged",
+          "usd_goal_real"
+          )
+dataset = dataset[,!names(dataset) %in% drops]
 
 K = 10
 folds = cut(seq(1, nrow(dataset)), breaks = K, labels = FALSE)
@@ -72,4 +85,4 @@ for(k in 1:K){
   accuracy = true_predict / nrow(dataset[test_set,])
   cost[k] = accuracy
 }
-average_cost = mean(cost) #calculates the average accuracy of the model
+average_cost = mean(cost)
