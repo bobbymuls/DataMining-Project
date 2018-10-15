@@ -36,12 +36,28 @@ dataset$state = factor(dataset$state,
 
 summary(dataset)
 
-split = sample.split(dataset, SplitRatio = 0.8)
+split = sample.split(dataset, SplitRatio = 0.7)
 training_set = subset(dataset, split == TRUE)
 test_set = subset(dataset, split == FALSE)
 
-dataset_pred =  knn(training_set[,-7],test_set[,-7],training_set[,7],k=20)
+x = 20
+errRate = rep(0,x)
 
-cm = table(dataset_pred,test_set$state)
-cm
+for(i in 1:x){
+  dataset_pred =  knn(training_set[,-7],test_set[,-7],training_set[,7],k=i)
+  
+  cm = table(dataset_pred,test_set$state)
+  
+  errorrate = (cm[1,2]+cm[2,1])/ nrow(test_set)
+  
+  errRate[i] = errorrate
+}
+
+
+plot(1:x, errRate,
+     main = 'Error Rate vs. K Value',
+     xlab = 'K Value',
+     ylab = 'Error Rate',
+     col = "blue"
+) 
 
