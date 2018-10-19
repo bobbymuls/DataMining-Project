@@ -1,4 +1,4 @@
-ibrary(glmnet)
+library(glmnet)
 library(readxl)
 library(caret)
 
@@ -33,19 +33,23 @@ forward.model <- step(nullmodel, scope=list(lower=nullmodel, upper=fullmodel), d
 ### The logistic regression model is chonsen with the lowest AIC of 1888.27 as criterion.
 
 #The final model from backward and forward step-wise selection is as below
-fit.glm <- glm(state ~ main_category+launched_year+duration+backers+usd_pledged_real+usd_goal_real+textlength, 
-               data=ks.train, family="binomial")
+fit.glm <- glm(state ~ main_category+launched_year+duration+backers+usd_pledged_real+usd_goal_real+textlength, data=ks.train, 
+               family="binomial")
 summary(fit.glm)
 
+#10-fold CV
 ctrl <- trainControl(method="repeatedcv", number=10, savePredictions=TRUE)
 
-fit.model <- train(state ~ main_category+launched_year+duration+backers+usd_pledged_real+usd_goal_real+textlength, data=ks.train, 
-                   method="glm", family="binomial", trControl=ctrl, tuneLength=10)
+fit.model <- train(state ~ main_category+launched_year+duration+backers+usd_pledged_real+usd_goal_real+textlength, 
+                   data=ks.train, method="glm", family="binomial", trControl=ctrl, tuneLength=10)
 
 pred <- predict(fit.model, newdata=ks.test)
 confusionMatrix(data=pred, ks.test$state)
-### 99.92% accuracy?
 
+# Classification Rate
+accuracy <- table(pred, t(ks.test[,"state"]))
+(1-sum(diag(accuracy))/sum(accuracy))*100 # Calculate misclassification rate
+#0.08085245
 
 #Confusion Matrix and Statistics
 #
@@ -72,19 +76,6 @@ confusionMatrix(data=pred, ks.test$state)
 #Balanced Accuracy : 0.9993         
 #
 #'Positive' Class : 0          
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
