@@ -6,7 +6,7 @@ library(class)
 
 rm(list = ls())
 setwd("~/Desktop")
-dataset = read.csv("ks_project_2018_new.csv")
+dataset = read.csv("ks_project_2018_new(1).csv")
 
 drops = c("X",
           "name",
@@ -36,7 +36,7 @@ dataset$state = factor(dataset$state,
                        levels = c('failed', 'successful'),
                        labels = c(0, 1))
 
-dataset_h1 = one_hot(as.data.table(dataset$main_category,dataset$country))
+dataset_h1 = one_hot(as.data.table(dataset$main_category,dataset$country,dataset$launched_month))
 
 normalize = function(x)
 {
