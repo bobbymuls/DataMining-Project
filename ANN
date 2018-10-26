@@ -86,7 +86,7 @@ misclassificationrate = (1-sum(diag(confmat))/sum(confmat))*100
 #Accuracy = 99.8%????
 
 ######################################################################
-#10-fold cross validation (tested on 1k dataset)
+#10-fold cross validation (tested on 5k dataset)
 set.seed(4510)
 K = 10
 accuracy = NULL
@@ -122,6 +122,6 @@ for(k in 1:K){
   
 }
 mean(accuracy)
-#98.6%
+#99.64%
 mean(costNNCV)
-#MSE = 0.01166748414
+#MSE = 0.003331274296
