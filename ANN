@@ -1,5 +1,12 @@
 rm(list = ls())
 
+#install library
+#install.packages("neuralnet")
+#install.packages("caret")
+# load library
+library(neuralnet)
+library(caret)
+
 dataset = read.csv("ks_project_2018.csv")
 drops = c("X",
           "name",
@@ -28,40 +35,93 @@ dataset$state = as.numeric(as.character(factor(dataset$state,
                                               levels = c('failed', 'successful'),
                                               labels = c(0, 1))))
 str(dataset)
-dataset[1:10,]
+set.seed(4510)
+
+#Select 10k random rows to test the code out
+df = dataset
+rNames = row.names(df)
+samprows = sample(rNames,1000)
+dataset = subset(df,rNames%in%samprows) 
+
+# Random sampling
+samplesize = 0.75 * nrow(dataset)
+index = sample( seq_len ( nrow ( dataset ) ), size = samplesize )
 
 ## Scale data for neural network
 max = apply(dataset , 2 , max)
 min = apply(dataset, 2 , min)
 scaled = as.data.frame(scale(dataset, center = min, scale = max - min))
 
-# Random sampling
-samplesize = 0.60 * nrow(dataset)
-set.seed(4510)
-index = sample( seq_len ( nrow ( dataset ) ), size = samplesize )
-
-# Create training and test set
-datatrain = dataset[ index, ]
-datatest = dataset[ -index, ]
-
-## Fit neural network 
-
-# install library
-install.packages("neuralnet")
-# load library
-library(neuralnet)
-
 # creating training and test set
 trainNN = scaled[index , ]
 testNN = scaled[-index , ]
 
-# fit neural network 
-#stepmax increased from 1e5 to 1e6
+## Fit neural network - test out number of neurons and layers results in the best accuracy 
+#2 layers of 7 neurons in the first layer and 5 in the 2nd results in the lowest error terms for 5 repetitions
 nn <- neuralnet(state~main_category+country+goal+pledged+backers+usd_pledged_real+duration+textlength,
-                data = trainNN,hidden = 5,stepmax = 1e6,linear.output = F)
-#if the code runs faster, repeat nn trainings
-#nn <- neuralnet(state~main_category+country+goal+pledged+backers+usd_pledged_real+duration+textlength,
-                #data = trainNN,hidden = 5,stepmax = 1e6,linear.output = F, rep=5)
+                data = trainNN,hidden = c(7,5),stepmax = 1e6,linear.output = F,lifesign = 'full', rep=5)
 
 # plot neural network
-plot(nn)
+#returns the matrix of the rep with the lowest error
+nn$result.matrix[1,]
+min(nn$result.matrix[1,])
+#best outcome: lowest error term: rep = 2
+plot(nn, rep = 2)
+
+mypredict = compute(nn,testNN[,-7],rep = 2) #Compute predictions of test set
+#Descaling as output is a normalized prediction, so we need to scale it back in order to make a more meaningful comparison
+mypredict = (mypredict$net.result * (max(dataset$state) - min(dataset$state))) + min(dataset$state)
+#print(head(mypredict)) #To check out net.result(dataset$state) of predictions
+mypredictrounded = sapply(mypredict,round,digits=0) #to round off as State is either 0 or 1
+
+#To compute confusion matrix
+confmat = table(mypredictrounded, testNN$state)
+misclassificationrate = (1-sum(diag(confmat))/sum(confmat))*100
+(accuracy = 100-misclassificationrate)
+
+#mypredictrounded    
+#   0      1
+#0 1503    4
+#1    1  992
+#Accuracy = 99.8%????
+
+######################################################################
+#10-fold cross validation (tested on 1k dataset)
+set.seed(4510)
+K = 10
+accuracy = NULL
+costNNCV = NULL
+
+max = apply(dataset , 2 , max)
+min = apply(dataset, 2 , min)
+scaled = as.data.frame(scale(dataset, center = min, scale = max - min))
+
+for(k in 1:K){
+  index = sample(seq_len(nrow(dataset)),round(0.9*nrow(dataset)))
+  trainNNCV = scaled[index,]
+  testNNCV = scaled[-index,]
+  datatest = dataset[-index,]
+  
+  NNCV <- neuralnet(state~main_category+country+goal+pledged+backers+usd_pledged_real+duration+textlength,
+                    data = trainNNCV,hidden = c(7,5),stepmax = 1e6,linear.output = F,lifesign = 'full')
+  
+  mypredictNNCV = compute(NNCV,testNNCV[,-7])$net.result
+  ##Descaling as output is a normalized prediction, so we need to scale it back in order to make a more meaningful comparison
+  mypredictNNCV = (mypredictNNCV * (max(dataset$state) - min(dataset$state))) + min(dataset$state)
+  
+  #MSE
+  costNNCV[k] = sum((datatest$state - mypredictNNCV)^2)/nrow(datatest)
+  
+  #Accuracy of result
+  #print(head(mypredictNNCV)) #To check out net.result(dataset$state) of predictions
+  mypredictroundedNNCV = sapply(mypredictNNCV,round,digits=0) #to round off as State is either 0 or 1
+  #To compute confusion matrix
+  confmat = table(mypredictroundedNNCV, datatest$state)
+  misclassificationrate = (1-sum(diag(confmat))/sum(confmat))*100
+  accuracy[k] = 100-misclassificationrate
+  
+}
+mean(accuracy)
+#98.6%
+mean(costNNCV)
+#MSE = 0.01166748414
