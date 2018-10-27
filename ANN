@@ -1,18 +1,17 @@
 rm(list = ls())
 
-#install library
+# install library
 #install.packages("neuralnet")
 #install.packages("caret")
 # load library
 library(neuralnet)
-library(caret)
+#library(caret)
 
-dataset = read.csv("ks_project_2018.csv")
+dataset = read.csv("ks_project_2018_new.csv")
 drops = c("X",
           "name",
           "category",
           "launched_year",
-          "launched_month",
           "launched_day",
           "deadline_year",
           "deadline_month",
@@ -40,7 +39,7 @@ set.seed(4510)
 #Select 10k random rows to test the code out
 df = dataset
 rNames = row.names(df)
-samprows = sample(rNames,1000)
+samprows = sample(rNames,10000)
 dataset = subset(df,rNames%in%samprows) 
 
 # Random sampling
@@ -52,23 +51,24 @@ max = apply(dataset , 2 , max)
 min = apply(dataset, 2 , min)
 scaled = as.data.frame(scale(dataset, center = min, scale = max - min))
 
+## Fit neural network 
 # creating training and test set
 trainNN = scaled[index , ]
 testNN = scaled[-index , ]
 
-## Fit neural network - test out number of neurons and layers results in the best accuracy 
+# fit neural network 
 #2 layers of 7 neurons in the first layer and 5 in the 2nd results in the lowest error terms for 5 repetitions
-nn <- neuralnet(state~main_category+country+goal+pledged+backers+usd_pledged_real+duration+textlength,
+nn <- neuralnet(state~main_category+country+launched_month+goal+pledged+backers+usd_pledged_real+duration+textlength,
                 data = trainNN,hidden = c(7,5),stepmax = 1e6,linear.output = F,lifesign = 'full', rep=5)
 
 # plot neural network
 #returns the matrix of the rep with the lowest error
 nn$result.matrix[1,]
 min(nn$result.matrix[1,])
-#best outcome: lowest error term: rep = 2
-plot(nn, rep = 2)
+#best outcome: lowest error term: rep = 4
+plot(nn, rep = 4)
 
-mypredict = compute(nn,testNN[,-7],rep = 2) #Compute predictions of test set
+mypredict = compute(nn,testNN[,-8],rep = 2) #Compute predictions of test set
 #Descaling as output is a normalized prediction, so we need to scale it back in order to make a more meaningful comparison
 mypredict = (mypredict$net.result * (max(dataset$state) - min(dataset$state))) + min(dataset$state)
 #print(head(mypredict)) #To check out net.result(dataset$state) of predictions
@@ -81,9 +81,9 @@ misclassificationrate = (1-sum(diag(confmat))/sum(confmat))*100
 
 #mypredictrounded    
 #   0      1
-#0 1503    4
-#1    1  992
-#Accuracy = 99.8%????
+#0 1430    1
+#1    6 1063
+#Accuracy = 99.72%????
 
 ######################################################################
 #10-fold cross validation (tested on 5k dataset)
