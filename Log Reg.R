@@ -68,8 +68,9 @@ fit.glmnet <- train(state ~ main_category + country + backers + usd_goal_real + 
                     preProcess = c("center", "scale"),
                     tuneGrid = grid.glmnet,
                     trControl = ctrl.glmnet)
+
 fit.glmnet
-### 1.0    0.01    0.7916955  0.5527473229
+### 1.0    0.01    0.7920911  0.5535618915
 ### Accuracy was used to select the optimal model using the largest value.
 ### The final values used for the model were alpha = 1 and lambda = 0.01.
 
@@ -84,16 +85,10 @@ accuracy.glmnet <- table(pred.glmnet, t(ks.test[,"state"]))
 # 21.57992%
 #-----------------------------------------------------------------------------------------------
 # ROC Curve & AUC
-pr <- prediction(pred.glmnet, ks.test$state)
+pr <- predict(pred.glmnet, ks.test$state)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf)
 
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc
-
-
-
-
-
-
