@@ -55,11 +55,11 @@ split = sample.split(dataset$state, SplitRatio = 0.7)
 training_set = subset(dataset, split == TRUE)
 test_set = subset(dataset, split == FALSE)
 
-x = 200
+x = 1
+j = 400
+errRate = rep(1,j)
 
-errRate = rep(0,x)
-
-for(i in 1:x){
+for(i in x:j){
   
   dataset_pred =  knn(training_set[,-1],test_set[,-1],training_set$state,k=i)
   cm = table(dataset_pred,test_set$state)
@@ -69,9 +69,18 @@ for(i in 1:x){
   errRate[i] = errorrate
 }
 
-plot(1:x, errRate,
+plot(x:j, errRate[200:400],
      main = 'Error Rate vs. K Value',
      xlab = 'K Value',
      ylab = 'Error Rate',
      col = "blue"
 ) 
+
+bestk = which.min(errRate)
+print(bestk)
+
+dataset_pred =  knn(training_set[,-1],test_set[,-1],training_set$state,k=bestk)
+matrix = table(dataset_pred,test_set$state)
+
+errorrate = (matrix[1,2]+matrix[2,1])/ nrow(test_set)
+print(errorrate)
