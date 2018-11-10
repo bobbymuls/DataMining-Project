@@ -11,9 +11,9 @@ ks <- read_excel("kslatest.xlsx")
 
 ks$state <- as.factor(ks$state)
 ks$launched_month <- as.factor(ks$launched_month)
-ks$usd_goal_real <- scale(ks$usd_goal_real)
-ks$duration <- scale(ks$duration)
-ks$textlength <- scale(ks$textlength)
+ks$usd_goal_real <- scale(ks$usd_goal_real, center = TRUE, scale = TRUE)
+ks$duration <- scale(ks$duration, center = TRUE, scale = TRUE)
+ks$textlength <- scale(ks$textlength, center = TRUE, scale = TRUE)
 
 View(ks)
 attach(ks)
