@@ -21,7 +21,7 @@ drops = c("X",
 
 #One hot encoding the training set
 training_set = training_set[,!names(training_set) %in% drops]
-one_hot_var_train = model.matrix(state ~ ., data = training_set)
+one_hot_var_train = model.matrix(state ~ .-1, data = training_set)
 one_hot_var_train = as.data.frame(one_hot_var_train)
 state = training_set$state
 training_set = cbind(state, one_hot_var_train)
@@ -30,7 +30,7 @@ colnames(training_set)[7] = 'main_categoryFilmVideo'
 
 #One hot encoding the test set
 test_set = test_set[,!names(test_set) %in% drops]
-one_hot_var_test = model.matrix(state ~ ., data = test_set)
+one_hot_var_test = model.matrix(state ~ .-1, data = test_set)
 one_hot_var_test = as.data.frame(one_hot_var_test)
 state = test_set$state
 test_set = cbind(state, one_hot_var_test)
