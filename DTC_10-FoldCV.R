@@ -1,88 +1,59 @@
 rm(list = ls())
-library(rpart)
-library(rattle)
-library(rpart.plot)
-library(RColorBrewer)
+library(tree)
 library(caTools)
+library(tictoc)
 
-dataset = read.csv("ks_project_2018.csv")
+training_set = read.csv("ks_project_2018_train.csv")
+test_set = read.csv("ks_project_2018_test.csv")
+
+#Remove unnecessary variables
 drops = c("X",
           "name",
           "launched_year",
-          "launched_month",
           "launched_day",
           "deadline_year",
           "deadline_month",
           "deadline_day",
+          "pledged",
           "currency",
           "usd.pledged",
-          "usd_goal_real"
-          )
-dataset = dataset[,!names(dataset) %in% drops]
+          "usd_goal_real",
+          "category"
+)
+#Remove unwanted variables in both datasets
+training_set = training_set[,!names(training_set) %in% drops]
+test_set = test_set[,!names(test_set) %in% drops]
 
-K = 10
-folds = cut(seq(1, nrow(dataset)), breaks = K, labels = FALSE)
-folds = folds[sample(nrow(dataset))]
+#Computing mean and sd of training set
+train_mean = apply(training_set[-c(1,2,7)], 2, mean)
+train_sd = apply(training_set[-c(1,2,7)], 2, sd)
 
-cost = rep(0,10)
+#Standardizing the training set
+training_set[-c(1,2,7)] = scale(training_set[-c(1,2,7)],
+                         center = train_mean,
+                         scale = train_sd)
 
-for(k in 1:K){
-  #Fitting the Model
-  training_set = which(folds != k)
-  test_set = which(folds == k)
-  fit = rpart(state ~ category+
-                main_category+
-                country+
-                goal+
-                pledged+
-                backers+
-                usd_pledged_real+
-                duration+
-                textlength,
-              data = dataset[training_set,],
-              control = rpart.control(minsplit = 2))
-  
-  #Looking at the decision tree graph
-  fancyRpartPlot(fit)
-  
-  #Showing the xerror of the fitting
-  plotcp(fit)
-  
-  #Creating cptable with number of split > 0
-  cptable=as.data.frame(fit$cptable)
-  counter=0
-  for(i in 1:nrow(cptable))
-  {
-    if(cptable[i-counter,2]==0)
-    {
-      cptable=cptable[-(i-counter),]
-      counter=counter+1
-    }
+#Standardizing the test set
+test_set[-c(1,2,7)] = scale(test_set[-c(1,2,7)],
+                     center = train_mean,
+                     scale = train_sd)
+
+tic()
+tree_fit = tree(state~.,
+                data = training_set)
+cv_tree_fit = cv.tree(tree_fit)
+toc() #4.66 sec
+
+min_cv_tree_fit = cv_tree_fit$size[which.min(cv_tree_fit$dev)]
+pruned_tree = prune.tree(tree_fit, best = min_cv_tree_fit)
+p_tree_pred = predict(pruned_tree, test_set)
+p_tree_pred_vec = rep(0, nrow(p_tree_pred))
+for(i in 1:length(p_tree_pred_vec)){
+  if(p_tree_pred[i,1] > p_tree_pred[i,2]){
+    p_tree_pred_vec[i] = "failed"
+  }else{
+    p_tree_pred_vec[i] = "successful"
   }
-  
-  #Pruning the tree
-  pfit = prune(fit,
-               cp=cptable[which.min(cptable[,"xerror"]),"CP"])
-  
-  #Plotting the pruned tree
-  fancyRpartPlot(pfit)
-  
-  #Predicting the test set
-  y_pred = predict(pfit, newdata = dataset[test_set,])
-  state_pred = rep(0, nrow(dataset[test_set,])) #Create a vector of "failed" and "successful"
-  for(i in 1:nrow(dataset[test_set,])){
-    if(y_pred[i,][1] > y_pred[i,][2]){
-      state_pred[i] = "failed"
-    }
-    else{
-      state_pred[i] = "successful"
-    }
-  }
-  
-  #Create confusion matrix
-  cm = table(state_pred, dataset[test_set,]$state)
-  true_predict = sum(cm[1,1], cm[2,2])
-  accuracy = true_predict / nrow(dataset[test_set,])
-  cost[k] = accuracy
 }
-average_cost = mean(cost)
+table(p_tree_pred_vec, test_set$state)
+mean(p_tree_pred_vec == test_set$state) #91.9%
