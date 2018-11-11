@@ -1,45 +1,54 @@
 rm(list = ls())
-setwd("C:/Users/Bobby/Desktop/Uni Stuff/Data Mining/Project Stuff")
-library(randomForest)
+library(tree)
 library(caTools)
+library(tictoc)
 
-dataset = read.csv("ks_project_2018_new.csv")
+training_set = read.csv("ks_project_2018_train.csv")
+test_set = read.csv("ks_project_2018_test.csv")
+
+#Remove unnecessary variables
 drops = c("X",
           "name",
           "launched_year",
-          "launched_month",
           "launched_day",
           "deadline_year",
           "deadline_month",
           "deadline_day",
+          "pledged",
           "currency",
           "usd.pledged",
           "usd_goal_real",
           "category"
 )
-dataset = dataset[,!names(dataset) %in% drops]
-dataset$main_category = as.numeric(dataset$main_category)
-dataset$country = as.numeric(dataset$country)
+#Remove unwanted variables in both datasets
+training_set = training_set[,!names(training_set) %in% drops]
+test_set = test_set[,!names(test_set) %in% drops]
 
-dataset[-7] = scale(dataset[-7])
+#Computing mean and sd of training set
+train_mean = apply(training_set[-c(1,2,7)], 2, mean)
+train_sd = apply(training_set[-c(1,2,7)], 2, sd)
 
-split = sample.split(dataset$state, SplitRatio = 0.7)
-training_set = subset(dataset, split == TRUE)
-test_set = subset(dataset, split == FALSE)
+#Standardizing the training set
+training_set[-c(1,2,7)] = scale(training_set[-c(1,2,7)],
+                                center = train_mean,
+                                scale = train_sd)
 
-fit = randomForest(state ~ main_category+
-                     goal+
-                     pledged+
-                     backers+
-                     usd_pledged_real,
+#Standardizing the test set
+test_set[-c(1,2,7)] = scale(test_set[-c(1,2,7)],
+                            center = train_mean,
+                            scale = train_sd)
+
+tic()
+fit = randomForest(state ~ .,
                    data = training_set,
-                   mtry = 3,
+                   mtry = 6,
                    ntree = 50,
                    importance = TRUE)
+toc() #3.21 sec
 
 importance(fit)
 varImpPlot(fit)
 
 y_pred = predict(fit, newdata = test_set, type = "class")
 cm = table(y_pred, test_set$state)
-accuracy = mean(y_pred == test_set$state) #99.9%
+accuracy = mean(y_pred == test_set$state) #99.03%
