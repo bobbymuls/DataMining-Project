@@ -1,39 +1,73 @@
 rm(list = ls())
-setwd("C:/Users/Bobby/Desktop/Uni Stuff/Data Mining/Project Stuff")
 library(e1071)
 library(caTools)
+library(tictoc)
 
-dataset = read.csv("ks_project_2018_new.csv")
-dataset$X.1 = NULL
+training_set = read.csv("ks_project_2018_train.csv")
+test_set = read.csv("ks_project_2018_test.csv")
+
+#Remove unnecessary variables
 drops = c("X",
           "name",
           "launched_year",
-          "launched_month",
           "launched_day",
           "deadline_year",
           "deadline_month",
           "deadline_day",
+          "pledged",
           "currency",
           "usd.pledged",
           "usd_goal_real",
           "category"
 )
-dataset = dataset[,!names(dataset) %in% drops]
-dataset$main_category = as.numeric(dataset$main_category)
-dataset$country = as.numeric(dataset$country)
 
-dataset[-7] = scale(dataset[-7])
+#One hot encoding the training set
+training_set = training_set[,!names(training_set) %in% drops]
+one_hot_var_train = model.matrix(state ~ ., data = training_set)
+one_hot_var_train = as.data.frame(one_hot_var_train)
+state = training_set$state
+training_set = cbind(state, one_hot_var_train)
+training_set$`(Intercept)` = NULL
+colnames(training_set)[7] = 'main_categoryFilmVideo'
 
-split = sample.split(dataset$state, SplitRatio = 0.7)
-training_set = subset(dataset, split == TRUE)
-test_set = subset(dataset, split == FALSE)
+#One hot encoding the test set
+test_set = test_set[,!names(test_set) %in% drops]
+one_hot_var_test = model.matrix(state ~ ., data = test_set)
+one_hot_var_test = as.data.frame(one_hot_var_test)
+state = test_set$state
+test_set = cbind(state, one_hot_var_test)
+test_set$`(Intercept)` = NULL
+colnames(test_set)[7] = 'main_categoryFilmVideo'
 
-fit = svm(formula = state ~ .,
+#Computing mean and sd of training set
+train_mean = apply(training_set[-1], 2, mean)
+train_sd = apply(training_set[-1], 2, sd)
+
+#Standardizing the training set
+training_set[-1] = scale(training_set[-1],
+                         center = train_mean,
+                         scale = train_sd)
+
+#Standardizing the test set
+test_set[-1] = scale(test_set[-1],
+                     center = train_mean,
+                     scale = train_sd)
+
+tic()
+fit = svm(state ~.,
           data = training_set,
-          type = 'C-classification',
-          kernel = 'radial',
-          gamma = 10)
+          kernel = 'linear',
+          cost = 0.1)
+toc() #178.17 sec for one-hot, 78.18 sec for binary encoding
+
+# tic()
+# svm_lin_tune = tune(svm,
+#                     state ~.,
+#                     data = training_set,
+#                     kernel = 'linear',
+#                     ranges = list(cost = c(0.01, 0.1, 1, 10, 100)))
+# toc()
 
 y_pred = predict(fit, newdata = test_set, type = "class")
 cm = table(y_pred, test_set$state)
-accuracy = mean(y_pred == test_set$state) #82.12%
+accuracy = mean(y_pred == test_set$state) #83.54% for one-hot, 82.17% for binary encoding
