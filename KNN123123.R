@@ -4,6 +4,8 @@ library(caTools)
 library(e1071)
 library(class)
 
+rm(list = ls())
+setwd("~/Desktop")
 training_set = read.csv("ks_project_2018_train.csv")
 test_set = read.csv("ks_project_2018_test.csv")
 
@@ -52,7 +54,7 @@ test_set[-1] = scale(test_set[-1],
                      scale = train_sd)
 
 
-x = 1
+x = 200
 j = 400
 errRate = rep(1,j)
 
