@@ -54,7 +54,7 @@ test_set[-1] = scale(test_set[-1],
                      scale = train_sd)
 
 
-x = 200
+x = 1
 j = 400
 errRate = rep(1,j)
 
