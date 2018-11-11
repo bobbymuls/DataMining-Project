@@ -4,56 +4,53 @@ library(caTools)
 library(e1071)
 library(class)
 
-rm(list = ls())
-setwd("~/Desktop")
-dataset = read.csv("ks_project_2018_new(1).csv")
+training_set = read.csv("ks_project_2018_train.csv")
+test_set = read.csv("ks_project_2018_test.csv")
 
 drops = c("X",
           "name",
-          "category",
           "launched_year",
-          "launched_month",
           "launched_day",
           "deadline_year",
           "deadline_month",
           "deadline_day",
+          "pledged",
           "currency",
           "usd.pledged",
           "usd_goal_real",
-          "main_category",
-          "country"
+          "category"
 )
 
-drops2 = c("backers",
-           "goal",
-           "pledged",
-           "usd_pledged_real",
-           "duration",
-           "textlength"
-)
+training_set = training_set[,!names(training_set) %in% drops]
+one_hot_var_train = model.matrix(state ~ ., data = training_set)
+one_hot_var_train = as.data.frame(one_hot_var_train)
+state = training_set$state
+training_set = cbind(state, one_hot_var_train)
+training_set$`(Intercept)` = NULL
+colnames(training_set)[7] = 'main_categoryFilmVideo'
 
-dataset$state = factor(dataset$state,
-                       levels = c('failed', 'successful'),
-                       labels = c(0, 1))
+test_set = test_set[,!names(test_set) %in% drops]
+one_hot_var_test = model.matrix(state ~ ., data = test_set)
+one_hot_var_test = as.data.frame(one_hot_var_test)
+state = test_set$state
+test_set = cbind(state, one_hot_var_test)
+test_set$`(Intercept)` = NULL
+colnames(test_set)[7] = 'main_categoryFilmVideo'
 
-dataset_h1 = one_hot(as.data.table(dataset$main_category,dataset$country,dataset$launched_month))
+#Computing mean and sd of training set
+train_mean = apply(training_set[-1], 2, mean)
+train_sd = apply(training_set[-1], 2, sd)
 
-normalize = function(x)
-{
-  return ((x - min(x)) / (max(x)-min(x)))
-}
+#Standardizing the training set
+training_set[-1] = scale(training_set[-1],
+                         center = train_mean,
+                         scale = train_sd)
 
-dataset = dataset[,!names(dataset) %in% drops]
+#Standardizing the test set
+test_set[-1] = scale(test_set[-1],
+                     center = train_mean,
+                     scale = train_sd)
 
-dataset2 = as.data.frame(lapply(dataset[,c(1,2,3,4,6,7)],normalize))
-
-state = dataset[,!names(dataset) %in% drops2]
-
-dataset = cbind(state,dataset_h1,dataset2)
-
-split = sample.split(dataset$state, SplitRatio = 0.7)
-training_set = subset(dataset, split == TRUE)
-test_set = subset(dataset, split == FALSE)
 
 x = 1
 j = 400
@@ -69,7 +66,7 @@ for(i in x:j){
   errRate[i] = errorrate
 }
 
-plot(x:j, errRate[200:400],
+plot(x:j, errRate[1:400],
      main = 'Error Rate vs. K Value',
      xlab = 'K Value',
      ylab = 'Error Rate',
