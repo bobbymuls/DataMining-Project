@@ -20,7 +20,8 @@ drops = c("X",
           "currency",
           "usd.pledged",
           "usd_goal_real",
-          "category"
+          "category",
+          "usd_pledged_real"
 )
 
 training_set = training_set[,!names(training_set) %in% drops]
@@ -56,7 +57,7 @@ test_set[-1] = scale(test_set[-1],
 
 x = 1
 j = 400
-errRate = rep(1,j)
+errRate = rep(1,400)
 
 for(i in x:j){
   
