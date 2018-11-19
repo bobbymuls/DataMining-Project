@@ -57,4 +57,4 @@ for(i in 1:length(p_tree_pred_vec)){
   }
 }
 table(p_tree_pred_vec, test_set$state)
-mean(p_tree_pred_vec == test_set$state) #91.9%
+mean(p_tree_pred_vec == test_set$state) #86.12%
