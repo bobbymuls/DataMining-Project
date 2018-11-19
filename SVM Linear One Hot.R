@@ -18,7 +18,8 @@ drops = c("X",
           "currency",
           "usd.pledged",
           "usd_goal_real",
-          "category"
+          "category",
+          "goal"
 )
 
 #One hot encoding the training set
@@ -58,7 +59,7 @@ fit = svm(state ~.,
           data = training_set,
           kernel = 'linear',
           cost = 0.1)
-toc() #178.17 sec for one-hot, 78.18 sec for binary encoding
+toc()
 
 # tic()
 # svm_lin_tune = tune(svm,
@@ -70,4 +71,4 @@ toc() #178.17 sec for one-hot, 78.18 sec for binary encoding
 
 y_pred = predict(fit, newdata = test_set, type = "class")
 cm = table(y_pred, test_set$state)
-accuracy = mean(y_pred == test_set$state) #83.54% for one-hot, 82.17% for binary encoding
+accuracy = mean(y_pred == test_set$state) #83.54%
