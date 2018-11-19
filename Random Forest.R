@@ -1,5 +1,5 @@
 rm(list = ls())
-library(tree)
+library(randomForest)
 library(caTools)
 library(tictoc)
 
@@ -18,30 +18,31 @@ drops = c("X",
           "currency",
           "usd.pledged",
           "usd_goal_real",
-          "category"
+          "category",
+          "goal"
 )
 #Remove unwanted variables in both datasets
 training_set = training_set[,!names(training_set) %in% drops]
 test_set = test_set[,!names(test_set) %in% drops]
 
 #Computing mean and sd of training set
-train_mean = apply(training_set[-c(1,2,7)], 2, mean)
-train_sd = apply(training_set[-c(1,2,7)], 2, sd)
+train_mean = apply(training_set[-c(1,2,6)], 2, mean)
+train_sd = apply(training_set[-c(1,2,6)], 2, sd)
 
 #Standardizing the training set
-training_set[-c(1,2,7)] = scale(training_set[-c(1,2,7)],
+training_set[-c(1,2,6)] = scale(training_set[-c(1,2,6)],
                                 center = train_mean,
                                 scale = train_sd)
 
 #Standardizing the test set
-test_set[-c(1,2,7)] = scale(test_set[-c(1,2,7)],
+test_set[-c(1,2,6)] = scale(test_set[-c(1,2,6)],
                             center = train_mean,
                             scale = train_sd)
 
 tic()
 fit = randomForest(state ~ .,
                    data = training_set,
-                   mtry = 6,
+                   mtry = 3,
                    ntree = 50,
                    importance = TRUE)
 toc() #3.21 sec
@@ -51,4 +52,4 @@ varImpPlot(fit)
 
 y_pred = predict(fit, newdata = test_set, type = "class")
 cm = table(y_pred, test_set$state)
-accuracy = mean(y_pred == test_set$state) #99.03%
+accuracy = mean(y_pred == test_set$state) #87.48%
