@@ -18,25 +18,26 @@ drops = c("X",
           "currency",
           "usd.pledged",
           "usd_goal_real",
-          "category"
+          "category",
+          "goal"
 )
 #Remove unwanted variables in both datasets
 training_set = training_set[,!names(training_set) %in% drops]
 test_set = test_set[,!names(test_set) %in% drops]
 
 #Computing mean and sd of training set
-train_mean = apply(training_set[-c(1,2,7)], 2, mean)
-train_sd = apply(training_set[-c(1,2,7)], 2, sd)
+train_mean = apply(training_set[-c(1,2,6)], 2, mean)
+train_sd = apply(training_set[-c(1,2,6)], 2, sd)
 
 #Standardizing the training set
-training_set[-c(1,2,7)] = scale(training_set[-c(1,2,7)],
-                         center = train_mean,
-                         scale = train_sd)
+training_set[-c(1,2,6)] = scale(training_set[-c(1,2,6)],
+                                center = train_mean,
+                                scale = train_sd)
 
 #Standardizing the test set
-test_set[-c(1,2,7)] = scale(test_set[-c(1,2,7)],
-                     center = train_mean,
-                     scale = train_sd)
+test_set[-c(1,2,6)] = scale(test_set[-c(1,2,6)],
+                            center = train_mean,
+                            scale = train_sd)
 
 tic()
 tree_fit = tree(state~.,
